@@ -46,6 +46,69 @@ bool checkAnswer(const char* userGuess, const char* original, int& attempts)
     return false;
 }
 
+bool isLowercaseWord(const char* text)
+{
+    if (*text == '\0')
+        return false;
+
+    while (*text != '\0')
+    {
+        if (*text < 'a' || *text > 'z')
+            return false;
+
+        text++;
+    }
+
+    return true;
+}
+
+enum class ReadStatus
+{
+    Ok,
+    TooLong,
+    End
+};
+
+ReadStatus readLine(char* buffer, int capacity)
+{
+    int i = 0;
+    bool tooLong = false;
+    char ch;
+
+    while (cin.get(ch))
+    {
+        if (ch == '\n')
+        {
+            buffer[i] = '\0';
+
+            if (tooLong)
+                return ReadStatus::TooLong;
+
+            return ReadStatus::Ok;
+        }
+
+        if (i < capacity - 1)
+        {
+            buffer[i] = ch;
+            i++;
+        }
+        else
+        {
+            tooLong = true;
+        }
+    }
+
+    buffer[i] = '\0';
+
+    if (i == 0 && !tooLong)
+        return ReadStatus::End;
+
+    if (tooLong)
+        return ReadStatus::TooLong;
+
+    return ReadStatus::Ok;
+}
+
 int main()
 {
     srand(static_cast<unsigned int>(time(nullptr)));
@@ -66,13 +129,27 @@ int main()
         cout << "осталось попыток: " << attempts << endl;
         cout << "введите слово или hint: ";
 
-        cin.width(50);
-        cin >> userGuess;
+        ReadStatus status = readLine(userGuess, 50);
+
+        if (status == ReadStatus::End)
+            return 0;
+
+        if (status == ReadStatus::TooLong)
+        {
+            cout << "слишком длинный ввод" << endl;
+            continue;
+        }
 
         if (strcmp(userGuess, "hint") == 0)
         {
             revealOneLetter(original, encrypted);
             cout << "подсказка: " << encrypted << endl;
+            continue;
+        }
+
+        if (!isLowercaseWord(userGuess))
+        {
+            cout << "неверный ввод" << endl;
             continue;
         }
 
